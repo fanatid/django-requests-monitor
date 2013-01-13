@@ -1,0 +1,66 @@
+{% load requests_monitor_utils %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Requests Monitor</title>
+    <link href="{{ STATIC_URL }}requests_monitor/css/app.css" type="text/css" rel="stylesheet" charset="utf-8" />
+    <script src="{{ STATIC_URL }}requests_monitor/js/app.js" type="text/javascript" charset="utf-8"></script>
+{% verbatim %}
+    <script id="tpl-requests" type="text/template">
+<div id="requests">
+    <table class="table table-hover table-condensed">
+        <thead>
+            <tr>
+                <th class="date">Date</th>
+                <th class="method">Method</th>
+                <th class="status">Status</th>
+                <th class="path">Path</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+    </script>
+    <script id="tpl-requests-request" type="text/template">
+<tr{{#request_class}} class="{{request_class}}"{{/request_class}} id="{{key}}">
+    <td class="date">{{formated_date}}</td>
+    <td class="method">{{method}}</td>
+    <td class="status">{{status}}</td>
+    <td class="path">{{path}}</td>
+</tr>
+    </script>
+    <script id="tpl-request" type="text/template">
+<div id="request">
+    <div class="title"></div>
+    <div class="content"></div>
+    <div class="toolbar">
+        <ul></ul>
+    </div>
+</div>
+    </script>
+    <script id="tpl-request-title" type="text/template">
+<h3>{{{title}}}</h3>
+    </script>
+    <script id="tpl-request-content" type="text/template">
+<div class="scroll">{{{content}}}</div>
+    </script>
+    <script id="tpl-request-panel-nav" type="text/template">
+<li>
+    <a data-hash="{{hash}}" class="active" title="{{title}}">{{nav_title}}<br /><small>{{nav_subtitle}}</small></a>
+</li>
+    </script>
+{% endverbatim %}
+</head>
+<body>
+    <div id="navbar">
+        <div class="navbar-inner">
+            <ul class="request">
+                <li>Requests</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="container"></div>
+</body>
+</html>

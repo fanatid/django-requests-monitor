@@ -1,0 +1,419 @@
+@import "compass/css3";
+@import "compass/utilities";
+
+$navbar-z-index:     1000;
+$navbar-height:      40px;
+$navbar-font-family: Georgia, 'Times New Roman', Times, serif;
+
+$requests-info:        #ecf6fb;
+$requests-success:     #f2f9ef;
+$requests-redirection: #fdfaea;
+$requests-cerror:      #faf3f3;
+$requests-serror:      #faf3f3;
+$requests-font-family: $navbar-font-family;
+
+$request-title-font-family:                sans-serif;
+$request-content-font-family:              sans-serif;
+$request-content-linechart-color:          #D3FF82;
+$request-content-linechart-color-selected: scale-lightness($request-content-linechart-color, -50%);
+$request-toolbar-font-family:              $navbar-font-family;
+
+
+ul {
+    list-style: none;
+}
+ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
+    margin: 0;
+    padding: 0;
+}
+
+#navbar {
+    top: 0;
+    right: 0;
+    left: 0;
+    position: fixed;
+    background-color: whiteSmoke;
+    border-bottom: 1px solid #a0a0a0;
+    z-index: $navbar-z-index;
+    .navbar-inner {
+        min-height: $navbar-height;
+        padding-left: 20px;
+        padding-right: 20px;
+        ul {
+            @include horizontal-list(0px);
+            font-size: 16px;
+            font-family: $navbar-font-family;
+            li {
+                line-height: $navbar-height/2;
+                padding: $navbar-height/4 0;
+                color: #999999;
+                a {
+                    @include link-colors(#292929);
+                    text-decoration: none;
+                }
+                .divider {
+                    padding: 0 5px;
+                    color: #ccc;
+                }
+            }
+        }
+    }
+}
+
+#container {
+    padding-top: 45px;
+}
+
+#requests {
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: $navbar-font-family;
+        tr {
+            cursor: pointer;
+            width: 100%;
+        }
+        th, td {
+            padding: 7px 5px;
+            line-height: 20px;
+            text-align: left;
+        }
+        th {
+            vertical-align: bottom;
+        }
+        td {
+            vertical-align: top;
+            border-top: 1px solid #dddddd;
+        }
+        .date {
+            width: 180px;
+        }
+        .method {
+            width: 75px;
+        }
+        .status {
+            width: 75px;
+        }
+        .path {
+            
+        }
+        .info {
+            background-color: $requests-info;
+        }
+        .info:hover {
+            background-color: scale-lightness($requests-info, -10%);
+        }
+        .success {
+            background-color: $requests-success;
+        }
+        .success:hover {
+            background-color: scale-lightness($requests-success, -10%);
+        }
+        .redirection {
+            background-color: $requests-redirection;
+        }
+        .redirection:hover {
+            background-color: scale-lightness($requests-redirection, -10%);
+        }
+        .cerror {
+            background-color: $requests-cerror;
+        }
+        .cerror:hover {
+            background-color: scale-lightness($requests-cerror, -10%);
+        }
+        .serror {
+            background-color: $requests-serror;
+        }
+        .serror:hover {
+            background-color: scale-lightness($requests-serror, -10%);
+        }
+    }
+}
+
+#request {
+    .title {
+        top: 40px;
+        left: 0;
+        right: 200px;
+        position: fixed;
+        line-height: 20px;
+        width: 100%;
+        padding: 10px 0 10px 20px;
+        z-index: $navbar-z-index - 2;
+        background-color: #fffcec;
+        border-bottom: 1px solid #a0a0a0;
+        display: none;
+        h3 {
+            font-family: $request-title-font-family;
+            font-weight: lighter;
+            font-size: 20px;
+            code {
+                display: inline;
+                font-family: Consolas, Monaco, "Bitstream Vera Sans Mono", "Lucida Console", monospace;
+                font-weight: lighter;
+                font-size: 16px;
+            }
+        }
+    }
+    .content {
+        position: absolute;
+        top: 80px;
+        right: 200px;
+        bottom: 0;
+        left: 0;
+        height: auto;
+        padding: 2px 0 5px 20px;
+        background-color: whiteSmoke;
+        display: none;
+        .scroll {
+            height: 100%;
+            overflow: auto;
+            display: block;
+            padding: 0 10px 0 0;
+        }
+        table {
+            margin-top: 0.8em;
+            width: 100%;
+            border:1px solid #ccc;
+            background-color: white;
+            overflow: auto;
+            border-collapse: collapse;
+            font-family: $request-content-font-family;
+            .color {
+                width: 3px;
+                span {
+                    width: 3px;
+                    height: 12px;
+                    overflow: hidden;
+                }
+            }
+            .toggle {
+                width: 14px;
+                padding-top: 3px;
+                .djToggleSwitch {
+                    text-decoration: none;
+                    border: 1px solid #999;
+                    height: 12px;
+                    width: 12px;
+                    line-height: 12px;
+                    text-align: center;
+                    color: #777;
+                    display: inline-block;
+                    @include background-image(linear-gradient(center top, white, #DCDCDC));
+                }
+            }
+            .query {
+                .djDebugUncollapsed {
+                    color: #333;
+                    text-decoration: none;
+                }
+                .djDebugCollapsed {
+                    display: none;
+                    text-decoration: none;
+                    color: #333;
+                }
+            }
+            .timeline {
+                width: 30%;
+                .djDebugTimeline {
+                    position: relative;
+                    height: 100%;
+                    min-height: 100%;
+                    .djDebugLineChart {
+                        position: absolute;
+                        left: 0;
+                        right: 0;
+                        top: 0;
+                        bottom: 0;
+                        vertical-align: middle;
+                        strong {
+                            text-indent: -10000em;
+                            display: block;
+                            vertical-align: middle;
+                            background-color: $request-content-linechart-color;
+                        }
+                    }
+                }
+            }
+            .time {
+
+            }
+            .actions {
+                min-width: 70px;
+            }
+            .djUnselected {
+                display: none;
+            }
+            .djSelected {
+                display: table-row;
+            }
+            .djSQLDetailsDiv {
+                margin-top:0.8em;
+                pre {
+                    color: #555;
+                    border: 1px solid #ccc;
+                    background-color: #fff;
+                    padding: 2px 3px;
+                    margin-bottom: 3px;
+                    span {
+                        color: #000;
+                        font-weight: bold;
+                    }
+                    span.path {
+                        color: #777;
+                        font-weight: normal;
+                    }
+                    span.code {
+                        font-weight: normal;
+                    }
+                }
+            }
+        }
+        tr.djDebugOdd {
+            background-color: #f5f5f5;
+        }
+        tr:hover {
+            .timeline {
+                .djDebugTimeline {
+                    .djDebugLineChart {
+                        strong {
+                            background-color: $request-content-linechart-color-selected;
+                        }
+                    }
+                }
+            }
+        }
+        th, td {
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            padding: 1px 6px 1px 4px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        td {
+            padding: 2px 3px;
+            font-size: 13px;
+        }
+        code {
+            white-space: pre;
+        }
+        h4 {
+            margin-top: 0.8em;
+            font-size: 20px;
+        }
+        p {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        ul.stats {
+            padding-top: 7px;
+            li {
+                width: 30%;
+                float: left;
+                font-size: 15px;
+                strong.label {
+                    display: block;
+                }
+                span.color {
+                    height: 12px;
+                    width: 3px;
+                    display: inline-block;
+                }
+                span.info {
+                    display: block;
+                    padding-left: 10px;
+                }
+            }
+        }
+        ol {
+            font-size: 14px;
+            font-family: sans-serif;
+            li {
+                padding-left: 10px;
+            }
+        }
+        dl {
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+        dt {
+            margin-top: 0.75em;
+        }
+        dd {
+            margin-left: 10px;
+        }
+        samp {
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+        .djTemplateShowContext {
+            color: #999;
+            cursor: pointer;
+        }
+        .djTemplateShowContext:hover {
+            color: #000;
+        }
+        .toggleTemplate {
+            padding: 2px 3px;
+            background-color: #bbb;
+            color: #000;
+            @include border-radius(3px);
+        }
+        .toggleTemplate:hover {
+            background-color: #444;
+            color: #ffe761;
+        }
+        .djTemplateHideContextDiv {
+            background-color: #fff;
+            code {
+                font-size: 14px;
+                display: block;
+                font-family: Consolas, Monaco, "Bitstream Vera Sans Mono", "Lucida Console", monospace;
+                white-space: pre;
+                overflow: auto;
+            }
+        }
+    }
+    .toolbar {
+        top: $navbar-height;
+        right: 0;
+        bottom: 0;
+        position: absolute;
+        width: 200px;
+        background-color: whiteSmoke;
+        font-family: $request-toolbar-font-family;
+        z-index: $navbar-z-index - 1;
+        ul {
+            li {
+                padding: 10px 10px 5px 15px;
+                border-bottom: 1px solid #a0a0a0;
+                cursor: pointer;
+                a {
+                    text-decoration: none;
+                    font-size: 18px;
+                    color: #004263;
+                    small {
+                        font-size: 12px;
+                        color: black;
+                    }
+                }
+            }
+            li:hover {
+                background-color: scale-lightness(whiteSmoke, -10%);
+            }
+            li.active {
+                background-color: scale-lightness(whiteSmoke, -5%);
+                padding-left: 25px;
+                a {
+                    color: #7C4A03;
+                }
+            }
+            li.active:hover{
+                background-color: scale-lightness(whiteSmoke, -10%);
+            }
+        }
+    }
+}
