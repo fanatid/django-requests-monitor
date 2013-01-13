@@ -1,7 +1,8 @@
 var fs         = require('fs'),
     path       = require('path'),
     browserify = require('browserify'),
-    shim       = require('browserify-shim');
+    shim       = require('browserify-shim'),
+    UglifyJS   = require("uglify-js");
 
 
 function bundle(debug) {
@@ -11,7 +12,7 @@ function bundle(debug) {
     var vendorDir = path.join(__dirname, 'vendor');
     var entryFile = path.join(__dirname, 'app.coffee');
 
-    var bundled = browserify({ debug: true })
+    var bundled = browserify({ debug: debug })
         .use(shim({
             alias:   'jquery',
             path:    path.join(vendorDir, 'jquery.js'),
@@ -45,6 +46,13 @@ function bundle(debug) {
         .addEntry(entryFile)
         .bundle()
         .shim();
+
+    if (!debug) {
+        var ast = UglifyJS.parse(bundled);
+        ast.figure_out_scope();
+        ast = ast.transform(UglifyJS.Compressor());
+        bundled = ast.print_to_string();
+    }
 
     fs.writeFileSync(builtFile, bundled);
 }
