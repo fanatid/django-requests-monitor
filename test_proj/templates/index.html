@@ -28,7 +28,7 @@
                     setRequestInterval($(this).val());
             });
             $("input[type=checkbox]").change(function(){
-                if ($(this).attr("checked") !== undefined)
+                if ($(this).is(":checked"))
                     setRequestInterval($("input[type=text]").val())
                 else
                     clearInterval(sendRequestInterval);

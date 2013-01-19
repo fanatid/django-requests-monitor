@@ -54,6 +54,8 @@ INSTALLED_APPS = (
 
 INTERNAL_IPS = ('127.0.0.1',)
 
-RM_STORAGE = 'memcached://127.0.0.1:11211'
-RM_STORAGE_TIMEOUT = 300
-RM_URL = '/requests/'
+REQUESTS_MONITOR_CONFIG = {
+    'STORAGE': 'memcached://127.0.0.1:11211',
+    'TIMEOUT': 300,
+    'PREFIX':  '/requests/',
+}

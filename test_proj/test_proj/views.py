@@ -5,10 +5,9 @@ from django.shortcuts import render_to_response
 
 try:
     from django.contrib.auth import get_user_model
+    User = get_user_model()
 except ImportError:
     from django.contrib.auth.models import User
-else:
-    User = get_user_model()
 
 
 def make_username(length=20):
