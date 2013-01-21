@@ -1,11 +1,7 @@
 import imp
 import thread
-import datetime
 
-from django.http import HttpResponseRedirect
-from django.utils import timezone
-
-from debug_toolbar.middleware import _HTML_TYPES, DebugToolbarMiddleware
+from debug_toolbar.middleware import DebugToolbarMiddleware
 
 import requests_monitor.urls
 from requests_monitor.storage import Storage
@@ -37,39 +33,26 @@ class RequestMonitorMiddleware(DebugToolbarMiddleware):
         return ret
 
     def process_response(self, request, response):
+        content_length = len(response.content)
         ret = super(RequestMonitorMiddleware, self).process_response(request,
             response)
         ident = thread.get_ident()
         toolbar = self.__class__.toolbars.get(ident)
-        if toolbar is not None:
+        if toolbar is not None \
+          and not request.get_full_path().startswith('/%s' % requests_monitor.urls._PREFIX):
             self.__class__.debug_toolbars[ident] = toolbar
-            date = timezone.now()
-            data = {
-                'date':    date,
-                'expiry':  date + datetime.timedelta(seconds=Storage.timeout),
-                'method':  request.method,
-                'status':  response.status_code,
-                'path':    request.get_full_path(),
-                'request': request,
-                'panels':  [],
-            }
-            call_process_response = False
-            if isinstance(response, HttpResponseRedirect):
-                if not toolbar.config['INTERCEPT_REDIRECTS']:
-                    call_process_response = True
-            if not ('gzip' not in response.get('Content-Encoding', '') and \
-                response.get('Content-Type', '').split(';')[0] in _HTML_TYPES):
-                call_process_response = True
+            call_process_response = content_length != len(response.content)
+            panels = []
             for panel in toolbar.panels:
                 if call_process_response:
                     panel.process_response(request, response)
-                data['panels'].append({
+                panels.append({
                     'title':        unicode(panel.title()),
                     'nav_title':    unicode(panel.nav_title()),
                     'nav_subtitle': unicode(panel.nav_subtitle()),
                     'content':      panel.content(),
                 })
-            Storage.add(data)
+            Storage.add(request=request, response=response, panels=panels)
             del self.__class__.debug_toolbars[ident]
             del self.__class__.toolbars[ident]
         return ret

@@ -1,20 +1,8 @@
-build: js css
-
-debug: js_debug css_debug
+build:
+	grunt
 
 watch:
-	node src/watch.js
-
-js:
-	node src/js/build.js
-
-js_debug:
-	node src/js/build.js --debug
-
-css:
-	scss --compass src/css/app.scss requests_monitor/static/requests_monitor/css/app.css
-
-css_debug: css
+	grunt watch
 
 clean:
 	find ./requests_monitor -type f -name \*.pyc -delete

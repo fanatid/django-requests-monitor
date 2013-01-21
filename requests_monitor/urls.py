@@ -1,10 +1,8 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 
-import requests_monitor
 
-
-_PREFIX = getattr(settings, 'RM_URL', requests_monitor.RM_URL)
+_PREFIX = settings.REQUESTS_MONITOR_CONFIG['PREFIX']
 if _PREFIX.startswith('/'):
     _PREFIX = _PREFIX[1:]
 if _PREFIX.endswith('/'):

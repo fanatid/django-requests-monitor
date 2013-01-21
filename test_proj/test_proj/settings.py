@@ -55,7 +55,7 @@ INSTALLED_APPS = (
 INTERNAL_IPS = ('127.0.0.1',)
 
 REQUESTS_MONITOR_CONFIG = {
-    'STORAGE': 'memcached://127.0.0.1:11211',
+    'STORAGE': 'redis://127.0.0.1:6379',
     'TIMEOUT': 300,
     'PREFIX':  '/requests/',
 }

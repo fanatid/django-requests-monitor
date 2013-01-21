@@ -1,4 +1,4 @@
 Django
 django-debug-toolbar
-python-memcached
+redis
 wsgiref

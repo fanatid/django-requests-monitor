@@ -1,56 +1,71 @@
+import sys
 import json
 import hashlib
-import copy
+import time
+import random
+import string
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
-from django.core.handlers.wsgi import WSGIRequest
-
-import requests_monitor
+from django.http import HttpResponseServerError
+from django.views import debug as debug_views
+from django.utils import timezone
 
 
 class StorageJSONEncode(DjangoJSONEncoder):
-    def default(self, o):
-        if isinstance(o, WSGIRequest):
-            data = copy.copy(o.environ)
-            data.update({
-                'wsgi.errors':       '',
-                'wsgi.file_wrapper': '',
-                'wsgi.input':        '',
-            })
-            return data
-        else:
-            return super(StorageJSONEncode, self).default(o)
+    pass
 
 
 class Storage(object):
-    def add(self, data):
+    _KEY_PREFIX      = 'request:'
+    _client_instance = None
+    _info_fields = (
+        'key',
+        'date',
+        'method',
+        'status',
+        'path',
+    )
+
+    def add(self, request, response, panels=None):
         raise NotImplementedError
 
     def get(self, key):
         raise NotImplementedError
 
-    def get_keys(self):
+    def get_keys(self, clean_db=True):
         raise NotImplementedError
 
-    def get_info(self, keys, chunk_size):
+    def get_info(self, keys):
         raise NotImplementedError
-
-    def delete(self, key):
-        raise NotImplementedError
-
-    def make_key(self, data):
-        m = hashlib.md5()
-        m.update(data)
-        return m.hexdigest()
 
     def _timeout(self):
-        return getattr(settings, 'RM_STORAGE_TIMEOUT',
-            requests_monitor.RM_STORAGE_TIMEOUT)
+        return settings.REQUESTS_MONITOR_CONFIG['TIMEOUT']
     timeout = property(_timeout)
 
-    def dump(self, data):
+    def _dump(self, data):
         return json.dumps(data, cls=StorageJSONEncode)
 
-    def load(self, data):
+    def _load(self, data):
         return json.loads(data)
+
+    def _make_key(self, data):
+        symbols = string.ascii_letters
+        salt = [random.choice(symbols) for _ in range(random.randrange(40, 50))]
+        return hashlib.md5(''.join(salt) + data).hexdigest()
+
+    def _make_data(self, request, response, panels=None):
+        data = {
+            'date':   timezone.now(),
+            'expiry': time.time() + self.timeout,
+            'method': request.method,
+            'status': response.status_code,
+            'path':   request.get_full_path(),
+            'panels': panels,
+        }
+        if isinstance(response, HttpResponseServerError):
+            reporter = debug_views.ExceptionReporter(request, *sys.exc_info())
+            data['response_content'] = reporter.get_traceback_html()
+        key = self._make_key('%(date)s:%(path)s' % data)
+        data['key'] = key
+        return (key, data)
