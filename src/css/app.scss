@@ -163,14 +163,21 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
         bottom: 0;
         left: 0;
         height: auto;
-        padding: 2px 0 5px 20px;
+        padding: 2px 0 5px 0;
         background-color: whiteSmoke;
         display: none;
         .scroll {
             height: 100%;
             overflow: auto;
             display: block;
-            padding: 0 10px 0 0;
+            padding: 0 10px 0 20px;
+        }
+        .response {
+            height: 100%;
+            iframe {
+                height: 100%;
+                width: 100%;
+            }
         }
         table {
             margin-top: 0.8em;

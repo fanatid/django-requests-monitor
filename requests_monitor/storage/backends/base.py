@@ -1,4 +1,3 @@
-import sys
 import json
 import hashlib
 import time
@@ -7,9 +6,6 @@ import string
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponseServerError
-from django.views import debug as debug_views
-from django.utils import timezone
 
 
 class StorageJSONEncode(DjangoJSONEncoder):
@@ -56,21 +52,9 @@ class Storage(object):
 
     def _make_data(self, request, response, toolbar=None):
         data = {
-            'date':   timezone.now(),
             'expiry': time.time() + self.timeout,
-            'method': request.method,
-            'status': response.status_code,
-            'path':   request.get_full_path(),
-            'panels': [{
-                'title':        unicode(panel.title()),
-                'nav_title':    unicode(panel.nav_title()),
-                'nav_subtitle': unicode(panel.nav_subtitle()),
-                'content':      panel.content(),
-            } for panel in toolbar.panels],
+            'key':    self._make_key('%s:%s' % (time.time(), request.get_full_path())),
         }
-        if isinstance(response, HttpResponseServerError):
-            reporter = debug_views.ExceptionReporter(request, *sys.exc_info())
-            data['response_content'] = reporter.get_traceback_html()
-        key = self._make_key('%(date)s:%(path)s' % data)
-        data['key'] = key
-        return (key, data)
+        for processor in settings.REQUESTS_MONITOR_CONFIG['DATA_PROCESSORS']:
+            data.update(processor(self, request, response, toolbar))
+        return (data['key'], data)

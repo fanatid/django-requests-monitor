@@ -122,20 +122,23 @@ class RequestView extends Backbone.View
         @$el = $(@el)
         @template_title     = Mustache.compile $("#tpl-request-title").text()
         @template_content   = Mustache.compile $("#tpl-request-content").text()
+        @template_response  = Mustache.compile $("#tpl-request-response").text()
         @template_panel_nav = Mustache.compile $("#tpl-request-panel-nav").text()
     render: ->
         @model = new RequestModel
             id: @options.key
         @model.fetch
             success: (data, status, xhr) =>
+                @$el.find(".content")
+                    .data("top", @$el.find(".content").css "top")
+                    .data("top-iframe", @$el.find(".title").css "top")
                 for panel, index in @model.get "panels"
                     $(@template_panel_nav _.extend _.clone(panel), "hash": '#!/r/' + @model.id + '/' + index)
                         .appendTo(@$el.find(".toolbar ul"))
                         .click ->
                             window.location.hash = $(@).find("a").data("hash")
                             return false
-                if @currentPanel?
-                    @set_panel @currentPanel
+                if @currentPanel? then @set_panel @currentPanel else @unset_panel()
             error: (xhr, status, error) =>
                 $("<div class=\"alert alert-error\">Cann't load request data :'(</div>")
                     .after("#navbar")
@@ -155,10 +158,14 @@ class RequestView extends Backbone.View
             panel    = panel.panel
         return if isNaN(panel) or @model.get("panels").length <= panel < 0
         @currentPanel = panel
-        @$el.find("ul li").eq(panel).addClass "active"
+        @$el.find(".toolbarul li").eq(panel).addClass "active"
         panel = @model.get("panels")[panel]
-        @$el.find(".title").show().html @template_title panel
-        @$el.find(".content").html @template_content panel
+        @$el.find(".title")
+            .show()
+            .html @template_title panel
+        @$el.find(".content")
+            .css("top", @$el.find(".content").data("top"))
+            .html @template_content panel
         # bind click event in SQL querys
         @$el.find(".query .djDebugSql").each ->
             $(@).find(".djDebugCollapsed, .djDebugUncollapsed").on "click", (event) =>
@@ -187,9 +194,20 @@ class RequestView extends Backbone.View
         callback() if callback?
     unset_panel: ->
         @currentPanel = null
-        @$el.find(".title").hide().html ""
-        @$el.find(".content").hide().html ""
-        @$el.find("ul li.active").removeClass "active"
+        @$el.find(".title")
+            .hide()
+            .html ""
+        @$el.find(".content")
+            .css("top", @$el.find(".content").data("top"))
+            .hide()
+            .html ""
+        if @model.get 'response_content'
+            @$el.find(".content")
+                .css("top", @$el.find(".content").data("top-iframe"))
+                .show()
+                .html @template_response
+                    'key': @options.key
+        @$el.find(".toolbar ul li.active").removeClass "active"
 
 
 class SettingsView extends Backbone.View

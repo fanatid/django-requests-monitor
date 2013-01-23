@@ -2,6 +2,10 @@ import re
 
 from django.conf import settings
 
+import requests_monitor.urls
+from requests_monitor.filters import DisallowUrlFilter
+from requests_monitor.utils.importlib import import_attr
+
 
 try:
     VERSION = __import__('pkg_resources') \
@@ -11,28 +15,37 @@ except Exception, e:
 
 
 config = {
-    'STORAGE': 'redis://127.0.0.1:6379',
-    'TIMEOUT': 300,
-    'PREFIX':  '/requests/',
-    'FILTERS': (),
+    'STORAGE':         'redis://127.0.0.1:6379',
+    'TIMEOUT':         300,
+    'PREFIX':          '/requests/',
+    'FILTERS':         (),
+    'DATA_PROCESSORS': (
+        'requests_monitor.context_processors.response_500_error',
+    ),
 }
 config.update(getattr(settings, 'REQUESTS_MONITOR_CONFIG', {}))
 
-import requests_monitor.urls
 filters = [
-    ('requests_monitor.filters.DisallowUrlFilter', (re.compile('^/%s' % requests_monitor.urls._PREFIX), ), {}),
+    (DisallowUrlFilter, (re.compile('^/%s' % requests_monitor.urls._PREFIX),), {})
 ]
-for name in config['FILTERS']:
+for row in config['FILTERS']:
     args, kwargs = (), {}
-    if isinstance(name, (tuple, list)):
-        name = list(name)
-        if len(name) == 2:
-            if isinstance(name[1], dict):
-                name.insert(1, ())
+    if isinstance(row, (tuple, list)):
+        row = list(row)
+        if len(row) == 2:
+            if isinstance(row[1], dict):
+                row.insert(1, ())
             else:
-                name.insert(2, {})
-        name, args, kwargs = name
-    filters.append((name, args, kwargs))
+                row.insert(2, {})
+        row, args, kwargs = row
+    filters.append((import_attr(row), args, kwargs))
 config['FILTERS'] = filters
+
+config['DATA_PROCESSORS'] = [
+    'requests_monitor.context_processors.info',
+    'requests_monitor.context_processors.panels',
+] + list(config['DATA_PROCESSORS'])
+config['DATA_PROCESSORS'] = [import_attr(path)
+    for path in config['DATA_PROCESSORS']]
 
 settings.REQUESTS_MONITOR_CONFIG = config

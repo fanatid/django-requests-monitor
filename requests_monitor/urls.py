@@ -10,8 +10,9 @@ if _PREFIX.endswith('/'):
 
 
 urlpatterns_without_prefix = patterns('requests_monitor.views',
-    url(r'^$', 					'index'),
-    url(r'^r/(?P<key>\w{32})$', 'request')
+    url(r'^$',                          'index'),
+    url(r'^r/(?P<key>\w{32})$',         'request'),
+    url(r'^r/(?P<key>\w{32})/content$', 'response_content')
 )
 
 urlpatterns = patterns('',

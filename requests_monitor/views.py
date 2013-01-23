@@ -25,4 +25,12 @@ def request(request, key):
     data = Storage.get(str(key))
     if data is None:
         raise Http404
+    data['response_content'] = 'response_content' in data
     return HttpResponse(json.dumps(data), 'application/json')
+
+
+def response_content(request, key):
+    data = Storage.get(str(key))
+    if data is None or 'response_content' not in data:
+        raise Http404
+    return HttpResponse(data['response_content'])
