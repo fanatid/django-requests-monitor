@@ -29,8 +29,8 @@ class RedisStorage(Storage):
         if expiry_keys:
             self._client.delete(*expiry_keys)
 
-    def add(self, request, response, panels=None):
-        key, data = self._make_data(request, response, panels)
+    def add(self, request, response, toolbar=None):
+        key, data = self._make_data(request, response, toolbar)
         for datakey, value in data.items():
             data[datakey] = self._dump(value)
         self._client.hmset(self._KEY_PREFIX + key, data)

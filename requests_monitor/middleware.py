@@ -5,10 +5,12 @@ from debug_toolbar.middleware import DebugToolbarMiddleware
 
 import requests_monitor.urls
 from requests_monitor.storage import Storage
+from requests_monitor.filters import get_filters
 
 
 class RequestMonitorMiddleware(DebugToolbarMiddleware):
     toolbars = {}
+    filters  = {}
 
     def __init__(self):
         super(RequestMonitorMiddleware, self).__init__()
@@ -18,18 +20,15 @@ class RequestMonitorMiddleware(DebugToolbarMiddleware):
         ident = thread.get_ident()
         toolbar = self.__class__.debug_toolbars.get(ident)
         if toolbar is not None:
-            try:
-                path = request.get_full_path()
-                if path.startswith('/%s' % requests_monitor.urls._PREFIX):
-                    raise Exception()
-            except:
-                del self.__class__.debug_toolbars[ident]
-            else:
+            self.__class__.filters[ident] = get_filters()
+            if all(f.process_request(request) for f in self.__class__.filters[ident]):
                 self.__class__.toolbars[ident] = toolbar
-            urlconf = imp.new_module('urlconf')
-            urlconf.urlpatterns = requests_monitor.urls.urlpatterns + \
-                request.urlconf.urlpatterns
-            request.urlconf = urlconf
+            else:
+                del self.__class__.debug_toolbars[ident]
+        urlconf = imp.new_module('urlconf')
+        urlconf.urlpatterns = requests_monitor.urls.urlpatterns + \
+            request.urlconf.urlpatterns
+        request.urlconf = urlconf
         return ret
 
     def process_response(self, request, response):
@@ -38,21 +37,14 @@ class RequestMonitorMiddleware(DebugToolbarMiddleware):
             response)
         ident = thread.get_ident()
         toolbar = self.__class__.toolbars.get(ident)
-        if toolbar is not None \
-          and not request.get_full_path().startswith('/%s' % requests_monitor.urls._PREFIX):
-            self.__class__.debug_toolbars[ident] = toolbar
-            call_process_response = content_length != len(response.content)
-            panels = []
-            for panel in toolbar.panels:
-                if call_process_response:
-                    panel.process_response(request, response)
-                panels.append({
-                    'title':        unicode(panel.title()),
-                    'nav_title':    unicode(panel.nav_title()),
-                    'nav_subtitle': unicode(panel.nav_subtitle()),
-                    'content':      panel.content(),
-                })
-            Storage.add(request=request, response=response, panels=panels)
-            del self.__class__.debug_toolbars[ident]
+        if toolbar is not None:
+            if all(f.process_response(request, response) for f in self.__class__.filters[ident]):
+                self.__class__.debug_toolbars[ident] = toolbar
+                if content_length == len(response.content):
+                    for panel in toolbar.panels:
+                        panel.process_response(request, response)
+                Storage.add(request=request, response=response, toolbar=toolbar)
+                del self.__class__.debug_toolbars[ident]
             del self.__class__.toolbars[ident]
+            del self.__class__.filters[ident]
         return ret

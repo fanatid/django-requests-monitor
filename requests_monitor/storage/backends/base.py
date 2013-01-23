@@ -27,7 +27,7 @@ class Storage(object):
         'path',
     )
 
-    def add(self, request, response, panels=None):
+    def add(self, request, response, toolbar=None):
         raise NotImplementedError
 
     def get(self, key):
@@ -54,14 +54,19 @@ class Storage(object):
         salt = [random.choice(symbols) for _ in range(random.randrange(40, 50))]
         return hashlib.md5(''.join(salt) + data).hexdigest()
 
-    def _make_data(self, request, response, panels=None):
+    def _make_data(self, request, response, toolbar=None):
         data = {
             'date':   timezone.now(),
             'expiry': time.time() + self.timeout,
             'method': request.method,
             'status': response.status_code,
             'path':   request.get_full_path(),
-            'panels': panels,
+            'panels': [{
+                'title':        unicode(panel.title()),
+                'nav_title':    unicode(panel.nav_title()),
+                'nav_subtitle': unicode(panel.nav_subtitle()),
+                'content':      panel.content(),
+            } for panel in toolbar.panels],
         }
         if isinstance(response, HttpResponseServerError):
             reporter = debug_views.ExceptionReporter(request, *sys.exc_info())

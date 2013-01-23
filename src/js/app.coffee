@@ -25,7 +25,7 @@ $.ajaxSetup
             xhr.setRequestHeader "X-CSRFToken", $.cookie('csrftoken')
 
 
-RequestInfoView = Backbone.View.extend
+class RequestInfoView extends Backbone.View
     initialize: (options) ->
         @model.view = @
     render: ->
@@ -50,7 +50,7 @@ RequestInfoView = Backbone.View.extend
         @$el.remove()
 
 
-RequestInfoCollection = Backbone.Collection.extend
+class RequestInfoCollection extends Backbone.Collection
     comparator: (model) ->
         -model.get("date").getTime()
     sync: ->
@@ -77,7 +77,7 @@ RequestInfoCollection = Backbone.Collection.extend
         clearInterval @syncID
 
 
-RequestsView = Backbone.View.extend
+class RequestsView extends Backbone.View
     initialize: (options) ->
         @el = $("#tpl-requests").text()
         @$el = $(@el)
@@ -112,11 +112,11 @@ RequestsView = Backbone.View.extend
         @$el.remove()
 
 
-RequestModel = Backbone.Model.extend
+class RequestModel extends Backbone.Model
     urlRoot: "r"
 
 
-RequestView = Backbone.View.extend
+class RequestView extends Backbone.View
     initialize: (options) ->
         @el = $("#tpl-request").text()
         @$el = $(@el)
@@ -192,12 +192,12 @@ RequestView = Backbone.View.extend
         @$el.find("ul li.active").removeClass "active"
 
 
-SettingsView = Backbone.View.extend
+class SettingsView extends Backbone.View
     render: ->
         @
 
 
-AppView = Backbone.View.extend
+class AppView extends Backbone.View
     initialize: (options) ->
         @setElement $("#container")
         @nav_request = [["Requests", "#"]]
@@ -243,7 +243,7 @@ AppView = Backbone.View.extend
         @$el.html @currentView.render().$el
 
 
-AppRouter = Backbone.Router.extend
+class AppRouter extends Backbone.Router
     initialize: (options) ->
         @app = new AppView
     requests: ->

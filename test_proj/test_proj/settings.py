@@ -58,4 +58,7 @@ REQUESTS_MONITOR_CONFIG = {
     'STORAGE': 'redis://127.0.0.1:6379',
     'TIMEOUT': 300,
     'PREFIX':  '/requests/',
+    'FILTERS': (
+        #('requests_monitor.filters.AjaxOnlyFilter'),
+    ),
 }
