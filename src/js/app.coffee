@@ -102,7 +102,6 @@ class RequestsView extends Backbone.View
             keys = @requests.pluck "key"
             @$el.find("tbody tr").each ->
                 if $(@).attr("id") not in keys
-                    console.log $(@)
                     $(@).remove()
         ), 5000
         @
@@ -123,6 +122,7 @@ class RequestView extends Backbone.View
         @template_title     = Mustache.compile $("#tpl-request-title").text()
         @template_content   = Mustache.compile $("#tpl-request-content").text()
         @template_response  = Mustache.compile $("#tpl-request-response").text()
+        @template_tpl_src   = Mustache.compile $("#tpl-request-template-source").text()
         @template_panel_nav = Mustache.compile $("#tpl-request-panel-nav").text()
     render: ->
         @model = new RequestModel
@@ -135,8 +135,9 @@ class RequestView extends Backbone.View
                 for panel, index in @model.get "panels"
                     $(@template_panel_nav _.extend _.clone(panel), "hash": '#!/r/' + @model.id + '/' + index)
                         .appendTo(@$el.find(".toolbar ul"))
-                        .click ->
-                            window.location.hash = $(@).find("a").data("hash")
+                        .on "click", ->
+                            window.router.navigate $(@).find("a").data("hash"), false
+                            Backbone.history.loadUrl $(@).find("a").data("hash")
                             return false
                 if @currentPanel? then @set_panel @currentPanel else @unset_panel()
             error: (xhr, status, error) =>
@@ -148,6 +149,7 @@ class RequestView extends Backbone.View
                         $(@).remove()
         @
     set_panel: (panel) ->
+        @$el.find(".title, .content").children().remove()
         unless panel instanceof Object
             panel = parseInt(panel)
         unless @model.has "panels"
@@ -158,7 +160,7 @@ class RequestView extends Backbone.View
             panel    = panel.panel
         return if isNaN(panel) or @model.get("panels").length <= panel < 0
         @currentPanel = panel
-        @$el.find(".toolbarul li").eq(panel).addClass "active"
+        @$el.find(".toolbar ul li").eq(panel).addClass "active"
         panel = @model.get("panels")[panel]
         @$el.find(".title")
             .show()
@@ -184,7 +186,16 @@ class RequestView extends Backbone.View
                     $el.html $el.data "toggle-close"
                     $("#sqlMain_"+id).find(".query .djDebugUncollapsed").trigger "click"
                     $("#sqlDetails_"+id).show()
-        # bind toggle context in Templates
+        # bind template source and toggle context in Templates
+        @$el.find("dl dt").each (index, item) =>
+            return unless ($tag = $(item).find("a")).length
+            $tag.on "click", (event) =>
+                $.ajax
+                    url: ($tag.attr "href").replace "/__debug__/template_source/", "t/"
+                    success: (data, status, xhr) =>
+                        @$el.find(".title").html @template_title title: "Template name: " + data.template_name
+                        @$el.find(".content").html @template_tpl_src source: data.source
+                return false
         @$el.find("dl dd").each ->
             $(@).find("a.djTemplateShowContext").on "click", =>
                 $(@).find(".djTemplateHideContextDiv").toggle()
@@ -193,14 +204,13 @@ class RequestView extends Backbone.View
         @$el.find(".content").show()
         callback() if callback?
     unset_panel: ->
+        @$el.find(".title, .content").children().remove()
         @currentPanel = null
         @$el.find(".title")
             .hide()
-            .html ""
         @$el.find(".content")
             .css("top", @$el.find(".content").data("top"))
             .hide()
-            .html ""
         if @model.get 'response_content'
             @$el.find(".content")
                 .css("top", @$el.find(".content").data("top-iframe"))

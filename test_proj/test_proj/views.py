@@ -19,4 +19,4 @@ def index(request):
     )
     user.username = make_username()
     User.objects.filter(pk=user.pk).delete()
-    return render_to_response('index.html')
+    return render_to_response('folder/index.html')

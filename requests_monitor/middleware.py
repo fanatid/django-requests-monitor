@@ -1,7 +1,7 @@
 import imp
 import thread
 
-from debug_toolbar.middleware import DebugToolbarMiddleware
+from debug_toolbar.middleware import DebugToolbarMiddleware, _HTML_TYPES
 
 import requests_monitor.urls
 from requests_monitor.storage import Storage
@@ -32,7 +32,6 @@ class RequestMonitorMiddleware(DebugToolbarMiddleware):
         return ret
 
     def process_response(self, request, response):
-        content_length = len(response.content)
         ret = super(RequestMonitorMiddleware, self).process_response(request,
             response)
         ident = thread.get_ident()
@@ -40,7 +39,8 @@ class RequestMonitorMiddleware(DebugToolbarMiddleware):
         if toolbar is not None:
             if all(f.process_response(request, response) for f in self.__class__.filters[ident]):
                 self.__class__.debug_toolbars[ident] = toolbar
-                if content_length == len(response.content):
+                if not ('gzip' not in response.get('Content-Encoding', '') and \
+                 response.get('Content-Type', '').split(';')[0] in _HTML_TYPES):
                     for panel in toolbar.panels:
                         panel.process_response(request, response)
                 Storage.add(request=request, response=response, toolbar=toolbar)

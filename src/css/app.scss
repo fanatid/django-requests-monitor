@@ -132,6 +132,45 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
 }
 
 #request {
+    .toolbar {
+        top: $navbar-height;
+        right: 0;
+        bottom: 0;
+        position: absolute;
+        width: 200px;
+        background-color: whiteSmoke;
+        font-family: $request-toolbar-font-family;
+        z-index: $navbar-z-index - 1;
+        ul {
+            li {
+                padding: 10px 10px 5px 15px;
+                border-bottom: 1px solid #a0a0a0;
+                cursor: pointer;
+                a {
+                    text-decoration: none;
+                    font-size: 18px;
+                    color: #004263;
+                    small {
+                        font-size: 12px;
+                        color: black;
+                    }
+                }
+            }
+            li:hover {
+                background-color: scale-lightness(whiteSmoke, -10%);
+            }
+            li.active {
+                background-color: scale-lightness(whiteSmoke, -5%);
+                padding-left: 25px;
+                a {
+                    color: #7C4A03;
+                }
+            }
+            li.active:hover{
+                background-color: scale-lightness(whiteSmoke, -10%);
+            }
+        }
+    }
     .title {
         top: 40px;
         left: 0;
@@ -381,45 +420,6 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
                 font-family: Consolas, Monaco, "Bitstream Vera Sans Mono", "Lucida Console", monospace;
                 white-space: pre;
                 overflow: auto;
-            }
-        }
-    }
-    .toolbar {
-        top: $navbar-height;
-        right: 0;
-        bottom: 0;
-        position: absolute;
-        width: 200px;
-        background-color: whiteSmoke;
-        font-family: $request-toolbar-font-family;
-        z-index: $navbar-z-index - 1;
-        ul {
-            li {
-                padding: 10px 10px 5px 15px;
-                border-bottom: 1px solid #a0a0a0;
-                cursor: pointer;
-                a {
-                    text-decoration: none;
-                    font-size: 18px;
-                    color: #004263;
-                    small {
-                        font-size: 12px;
-                        color: black;
-                    }
-                }
-            }
-            li:hover {
-                background-color: scale-lightness(whiteSmoke, -10%);
-            }
-            li.active {
-                background-color: scale-lightness(whiteSmoke, -5%);
-                padding-left: 25px;
-                a {
-                    color: #7C4A03;
-                }
-            }
-            li.active:hover{
-                background-color: scale-lightness(whiteSmoke, -10%);
             }
         }
     }

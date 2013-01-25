@@ -1,5 +1,5 @@
 # Django settings for test_proj project.
-import os
+import os, re
 
 PROJ_PATH = os.path.join(os.path.dirname(__file__), '..')
 
@@ -55,10 +55,11 @@ INSTALLED_APPS = (
 INTERNAL_IPS = ('127.0.0.1',)
 
 REQUESTS_MONITOR_CONFIG = {
-    'STORAGE': 'redis://127.0.0.1:6379',
+    #'STORAGE': 'redis://127.0.0.1:6379',
     'TIMEOUT': 300,
     'PREFIX':  '/requests/',
     'FILTERS': (
         #('requests_monitor.filters.AjaxOnlyFilter'),
+        ('requests_monitor.filters.DisallowUrlFilter', (re.compile('^/favicon.ico$'),)),
     ),
 }

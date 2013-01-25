@@ -1,4 +1,4 @@
-import datetime, time
+import time
 
 import redis
 
@@ -8,12 +8,12 @@ from requests_monitor.storage.backends.base import Storage
 class RedisStorage(Storage):
     def __init__(self, host, port):
         self._host = host
-        self._port = int(port)
+        self._port = port
 
     def _get_client(self):
         if self._client_instance is None:
             self._client_instance = redis.StrictRedis(
-                host=self._host, port=self._port)
+                host=self._host, port=int(self._port))
         return self._client_instance
     _client = property(_get_client)
 

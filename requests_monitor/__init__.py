@@ -1,6 +1,11 @@
+import os
+import multiprocessing
+import functools
 import re
 
 from django.conf import settings
+from django.core import management
+from django.core.management.commands import runserver
 
 import requests_monitor.urls
 from requests_monitor.filters import DisallowUrlFilter
@@ -15,7 +20,8 @@ except Exception, e:
 
 
 config = {
-    'STORAGE':         'redis://127.0.0.1:6379',
+    'STORAGE':         'builtin://127.0.0.1:10627',
+    'RUN_STORAGE_WITH_RUNSERVER': True,
     'TIMEOUT':         300,
     'PREFIX':          '/requests/',
     'FILTERS':         (),
@@ -49,3 +55,14 @@ config['DATA_PROCESSORS'] = [import_attr(path)
     for path in config['DATA_PROCESSORS']]
 
 settings.REQUESTS_MONITOR_CONFIG = config
+
+if settings.REQUESTS_MONITOR_CONFIG['RUN_STORAGE_WITH_RUNSERVER'] \
+ and settings.REQUESTS_MONITOR_CONFIG['STORAGE'].startswith('builtin://'):
+    runserver_run = runserver.Command.run
+    def run(self, *args, **options):
+        if os.environ.get("RUN_MAIN") is None:
+            multiprocessing.Process(target=management.call_command,
+                args=('runstorage',)).start()
+        return runserver_run(self, *args, **options)
+    runserver.Command.run = functools.update_wrapper(
+        wrapper=run, wrapped=runserver_run)
