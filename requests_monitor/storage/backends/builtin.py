@@ -1,95 +1,66 @@
 import socket
 import time
+import json
 
 from requests_monitor.storage.backends.base import Storage
 
 
-class BuiltinClient(object):
+class BuiltinStorageClient(object):
     def __init__(self, host, port):
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect((host, port))
-        self._buf = ''
+        self._host = host
+        self._port = port
 
-    def __del__(self):
-        self._socket.close()
-
-    def _recv(self):
-        while self._buf.find('\r\n') == -1:
-            self._buf += self._socket.recv(512)
-
-    def _get_row(self):
-        pos = self._buf.find('\r\n')
-        if pos == -1:
-            self._recv()
-            pos = self._buf.find('\r\n')
-        row, self._buf = self._buf.split('\r\n', 1)
-        return row
-
-    def _get_reply(self, size):
-        if size == -1:
+    def _read_sock(self, sock):
+        response = ''
+        while '\r\n' not in response:
+            response += sock.recv(4096)
+        length, response = response.split('\r\n', 1)
+        try:
+            length = int(length)
+        except ValueError:
             return None
-        buf = self._get_row() + '\r\n'
-        while len(buf) < size+2:
-            buf += self._get_row() + '\r\n'
-        return buf[:-2]
+        while len(response) < length:
+            response += sock.recv(4096)
+        if len(response) > length:
+            return None
+        try:
+            return json.loads(response)
+        except ValueError:
+            return None
 
-    def _get_multi_reply(self, size):
-        bulk = []
-        while size > 0:
-            row = self._get_row()
-            if row.startswith('$') and row[1:].isdigit():
-                bulk.append(self._get_reply(int(row[1:])))
-            else:
-                bulk.append(None)
-            size -= 1
-        return bulk
-
-    def execute_command(self, *args):
-        data = '*%d\r\n' % len(args)
-        for arg in args:
-            data += '$%d\r\n%s\r\n' % (len(arg), arg)
-        self._socket.send(data)
-        row = self._get_row()
-        if row.startswith(':') or row.startswith('-'):
-            return (not row.startswith('-'), row[1:])
-        elif row.startswith('$') and (row[1:].isdigit() or row == '$-1'):
-            return (True, self._get_reply(int(row[1:])))
-        elif row.startswith('*') and row[1:].isdigit():
-            return (True, self._get_multi_reply(int(row[1:])))
-        else:
-            return (False, None)
+    def execute_command(self, *command):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.250)
+        sock.connect((self._host, self._port))
+        command = json.dumps(command)
+        sock.send('%d\r\n%s' % (len(command), command))
+        response = self._read_sock(sock)
+        sock.close()
+        return response
 
     def hget(self, key, field):
-        ret = self.execute_command('HGET', key, field)
-        return ret[1] if ret[0] else None
+        return self.execute_command('HGET', key, field)
 
     def hkeys(self, key):
-        ret = self.execute_command('HKEYS', key)
-        return ret[1] if ret[0] else []
+        return self.execute_command('HKEYS', key)
 
     def hmget(self, key, *fields):
-        ret = self.execute_command('HMGET', key, *fields)
-        return ret[1] if ret[0] else []
+        return self.execute_command('HMGET', key, *fields)
 
     def hmset(self, key, data):
-        ret = self.execute_command('HMSET', key, *sum(data.items(), ()))
-        return int(ret[1]) if ret[0] and ret[1].isdigit() else 0
+        return self.execute_command('HMSET', key, *sum(data.items(), ()))
 
     def hset(self, key, field, value):
-        ret = self.execute_command('HSET', key, field, value)
-        return int(ret[1]) if ret[0] and ret[1].isdigit() else 0
+        return self.execute_command('HSET', key, field, value)
 
     def keys(self):
-        ret = self.execute_command('KEYS')
-        return ret[1] if ret[0] else []
+        return self.execute_command('KEYS')
 
     def type(self, key):
-        ret = self.execute_command('TYPE', key)
-        return ret[1] if ret[0] else None
+        return self.execute_command('TYPE', key)
 
     def delete(self, *keys):
-        ret = self.execute_command('DEL', *keys)
-        return int(ret[1]) if ret[0] and ret[1].isdigit() else 0
+        return self.execute_command('DEL', *keys)
 
 
 class BuiltinStorage(Storage):
@@ -99,7 +70,7 @@ class BuiltinStorage(Storage):
 
     def _get_client(self):
         if self._client_instance is None:
-            self._client_instance = BuiltinClient(
+            self._client_instance = BuiltinStorageClient(
                 host=self._host, port=int(self._port))
         return self._client_instance
     _client = property(_get_client)

@@ -8,19 +8,17 @@
     <script src="{{ STATIC_URL }}requests_monitor/js/app.js" type="text/javascript" charset="utf-8"></script>
 {% verbatim %}
     <script id="tpl-requests" type="text/template">
-<div id="requests">
-    <table class="table table-hover table-condensed">
-        <thead>
-            <tr>
-                <th class="date">Date</th>
-                <th class="method">Method</th>
-                <th class="status">Status</th>
-                <th class="path">Path</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
+<table class="table table-hover table-condensed">
+    <thead>
+        <tr>
+            <th class="date">Date</th>
+            <th class="method">Method</th>
+            <th class="status">Status</th>
+            <th class="path">Path</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
     </script>
     <script id="tpl-requests-request" type="text/template">
 <tr{{#request_class}} class="{{request_class}}"{{/request_class}} id="{{key}}">
@@ -31,13 +29,9 @@
 </tr>
     </script>
     <script id="tpl-request" type="text/template">
-<div id="request">
-    <div class="title"></div>
-    <div class="content"></div>
-    <div class="toolbar">
-        <ul></ul>
-    </div>
-</div>
+<div class="title"></div>
+<div class="content"></div>
+<div class="toolbar"><ul></ul></div>
     </script>
     <script id="tpl-request-title" type="text/template">
 <h3>{{{title}}}</h3>
@@ -56,14 +50,24 @@
     <a data-hash="{{hash}}" class="active" title="{{title}}">{{nav_title}}<br /><small>{{nav_subtitle}}</small></a>
 </li>
     </script>
+    <script id="tpl-settings" type="text/template">
+<form>
+    <label>Show last <input type="text" name="requests_count" /> requests</label><br />
+    <fieldset>
+        <legend>Filters</legend>
+        <label><input type="checkbox" name="ajax_only" /> Ajax only</label>
+        <label>Request method <input type="text" name="request_method" /></label>
+        <label>Response status code <input type="text" name="request_status_code" /></label>
+    </fieldset>
+</form>
+    </script>
 {% endverbatim %}
 </head>
 <body>
     <div id="navbar">
         <div class="navbar-inner">
-            <ul class="request">
-                <li>Requests</li>
-            </ul>
+            <ul class="request"></ul>
+            <ul class="settings"></ul>
         </div>
     </div>
 

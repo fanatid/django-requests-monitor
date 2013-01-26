@@ -57,6 +57,12 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
                 }
             }
         }
+        .request {
+            float: left;
+        }
+        .settings {
+            float: right;
+        }
     }
 }
 
@@ -422,5 +428,55 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
                 overflow: auto;
             }
         }
+    }
+}
+
+#settings {
+    form {
+        margin: 20px 0 0 40px;
+        width: 500px;
+    }
+    fieldset {
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+    legend {
+        display: block;
+        width: 100%;
+        padding: 0;
+        margin-bottom: 12px;
+        font-size: 21px;
+        line-height: 20px;
+        color: #333;
+        border: 0;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    label {
+        display: block;
+        margin-bottom: 10px;
+    }
+    input {
+        display: inline-block;
+        height: 16px;
+        border: 1px solid #ccc;
+        text-align: right;
+        padding: 0 1px;
+        @include border-radius(3px);
+        :focus {
+            border-color: rgba(82,168,236,.8);
+            outline: 0;
+        }
+    }
+    input[type="checkbox"] {
+        margin: 4px 0 0;
+        line-height: normal;
+    }
+    input[name="requests_count"] {
+        width: 35px;
+    }
+    input[name="request_method"],
+    input[name="request_status_code"] {
+        width: 100px;
     }
 }

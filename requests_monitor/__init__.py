@@ -25,9 +25,7 @@ config = {
     'TIMEOUT':         300,
     'PREFIX':          '/requests/',
     'FILTERS':         (),
-    'DATA_PROCESSORS': (
-        'requests_monitor.context_processors.response_500_error',
-    ),
+    'DATA_PROCESSORS': (),
 }
 config.update(getattr(settings, 'REQUESTS_MONITOR_CONFIG', {}))
 
@@ -50,6 +48,7 @@ config['FILTERS'] = filters
 config['DATA_PROCESSORS'] = [
     'requests_monitor.context_processors.info',
     'requests_monitor.context_processors.panels',
+    'requests_monitor.context_processors.response_500_error',
 ] + list(config['DATA_PROCESSORS'])
 config['DATA_PROCESSORS'] = [import_attr(path)
     for path in config['DATA_PROCESSORS']]

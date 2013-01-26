@@ -1,11 +1,11 @@
-import asyncore, asynchat, socket
+import asyncore, socket
 import re
 import types
+import json
 from functools import wraps
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
 
 
 class error_if_another_type(object):
@@ -42,21 +42,13 @@ class Storage(object):
              cls.instance = super(Storage, cls).__new__(cls)
         return cls.instance
 
-    def bulk_reply(self, value):
-        if value is None:
-            return '$-1\r\n'
-        return '$%d\r\n%s\r\n' % (len(value), value)
-
-    def multi_bulk_reply(self, values):
-        response = '*%d\r\n' % (len(values), )
-        for value in values:
-            if value is None:
-                response += '$-1\r\n'
-            else:
-                response += '$%d\r\n%s\r\n' % (len(value), value)
-        return response
+    def build_reply(self, value):
+        value = json.dumps(value)
+        return '%d\r\n%s' % (len(value), value)
 
     def run_command(self, command, *args):
+        #LOG.write('-'*80 + '\n' + str(command) + ''.join(args))
+        #LOG.flush()
         return getattr(self, 'command_' + command)(*args)
 
     def command_DEL(self, *keys):
@@ -65,20 +57,20 @@ class Storage(object):
             if key in self._db:
                 del self._db[key]
                 count += 1
-        return ':%s\r\n' % count
+        return self.build_reply(count)
 
     @error_if_another_type(dict)
     def command_HGET(self, key, field):
-        return self.bulk_reply(self._db[key].get(field))
+        return self.build_reply(self._db[key].get(field))
 
     @error_if_another_type(dict)
     def command_HKEYS(self, key):
-        return self.multi_bulk_reply(self._db[key].keys())
+        return self.build_reply(self._db[key].keys())
 
     @error_if_another_type(dict)
     def command_HMGET(self, key, *fields):
         h = self._db[key]
-        return self.multi_bulk_reply([h.get(field) for field in fields])
+        return self.build_reply([h.get(field) for field in fields])
 
     @error_if_another_type(dict)
     def command_HMSET(self, key, *fields):
@@ -86,15 +78,15 @@ class Storage(object):
         count = len(fields)
         for hkey, value in [fields[i:i+2] for i in xrange(0, count, 2)]:
             h[hkey] = value
-        return ':%s\r\n' % (count/2, )
+        return self.build_reply(count/2)
 
     @error_if_another_type(dict)
     def command_HSET(self, key, field, value):
         self._db[key][field] = value
-        return ':1\r\n'
+        return self.build_reply(1)
 
     def command_KEYS(self):
-        return self.multi_bulk_reply(self._db.keys())
+        return self.build_reply(self._db.keys())
 
     def command_TYPE(self, key):
         key_type = type(self._db.get(key))
@@ -102,7 +94,7 @@ class Storage(object):
             value = 'hash'
         else:
             value = None
-        return self.bulk_reply(value)
+        return self.build_reply(value)
 
 storage = Storage()
 
@@ -120,63 +112,63 @@ class AsyncServer(asyncore.dispatcher):
         return AsyncServerHandler(client)
 
 
-class AsyncServerHandler(asynchat.async_chat):
-    terminator = '\r\n'
+class AsyncServerHandler(asyncore.dispatcher):
+    def __init__(self, sock):
+        asyncore.dispatcher.__init__(self, sock)
+        self.length    = None
+        self.request   = ''
+        self.response  = ''
+        self._readable = True
+        self._writable = False
 
-    def __init__(self, conn=None):
-        asynchat.async_chat.__init__(self, conn)
-        self.data = ''
-        self.command_args  = None
-        self.command       = []
-        self.arg_length    = None
+    def readable(self):
+        return self._readable
 
-    def collect_incoming_data(self, data):
-        self.data += data
+    def writable(self):
+        return self._writable
 
-    def found_terminator(self):
-        if self.command_args is None:
-            if self.data[:1] == '*' and self.data[1:].isdigit() \
-             and int(self.data[1:]) > 0:
-                self.command_args = int(self.data[1:])
-            else:
-                self.push('-ERR unknown count arguments of the command\r\n')
-            self.data = ''
+    def handle_read(self):
+        chunk = self.recv(4096)
+        self.request += chunk
+        if self.length is None:
+            if not '\r\n' in self.request:
+                return
+            length, self.request = self.request.split('\r\n', 1)
+            if not length.isdigit():
+                self.close()
+                return
+            self.length = int(length)
+        length = len(self.request)
+        if length < self.length:
             return
-        if self.arg_length is None:
-            if self.data[:1] == '$' and self.data[1:].isdigit() \
-             and int(self.data[1:]) > 0:
-                self.arg_length = int(self.data[1:])
-            else:
-                self.command_args = None
-                self.command      = []
-                self.push('-ERR unknown length of the command\r\n')
-            self.data = ''
+        if length > self.length:
+            self.close()
             return
-        length = len(self.data)
-        if length < self.arg_length:
-            return
-        if length > self.arg_length:
-            self.command_args = None
-            self.command      = []
-            self.arg_length   = None
-            self.push('-ERR argument length is greater then submitted early\r\n')
-            return
-        self.command.append(self.data)
-        self.data = ''
-        self.command_args -= 1
-        if self.command_args == 0:
-            data = self.run_command()
-            self.push_with_producer(asynchat.simple_producer(data))
-            self.command_args = None
-            self.command = []
-        self.arg_length = None
+        self._readable  = False
+        if not self.process_request():
+            self.close()
+        else:
+            self._writable = True
 
-    def run_command(self):
-        if self.command[0] not in storage.COMMANDS:
-            return '-ERR unknown command\r\n'
-        if not storage.COMMANDS_CONTROL_LENGTH[self.command[0]](len(self.command[1:])):
-            return '-ERR invalid arguments\r\n'
-        return storage.run_command(self.command[0], *self.command[1:])
+    def process_request(self):
+        try:
+            command = json.loads(self.request)
+        except ValueError:
+            return False
+        if not isinstance(command, list):
+            return False
+        if command[0] not in storage.COMMANDS:
+            return False
+        if not storage.COMMANDS_CONTROL_LENGTH[command[0]](len(command[1:])):
+            return False
+        self.response = storage.run_command(command[0], *command[1:])
+        return True
+
+    def handle_write(self):
+        bytes_sent = self.send(self.response)
+        self.response = self.response[bytes_sent:]
+        if not self.response:
+            self.close()
 
 
 class Command(BaseCommand):

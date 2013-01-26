@@ -1,5 +1,4 @@
 import multiprocessing
-import socket
 import time
 
 from django.conf import settings
@@ -15,19 +14,13 @@ class BuiltinStorageTest(unittest.TestCase):
         self.server = multiprocessing.Process(target=management.call_command,
             args=('runstorage',))
         self.server.start()
-        from requests_monitor.storage.backends.builtin import BuiltinClient
-        for _ in xrange(10):
-            try:
-                self.client = BuiltinClient(*self.ADDR)
-            except socket.error:
-                time.sleep(0.05)
-            else:
-                return
-        raise
+        time.sleep(0.400)
+        from requests_monitor.storage.backends.builtin import BuiltinStorageClient
+        self.client = BuiltinStorageClient(*self.ADDR)
 
     def tearDown(self):
         self.server.terminate()
-        time.sleep(0.05)
+        time.sleep(0.100)
 
     def test_DEL(self):
         self.client.hset('key1', 'field', 'value')

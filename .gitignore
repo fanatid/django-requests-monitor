@@ -2,4 +2,4 @@
 test_proj/env
 test_proj/env.tar
 *.sqlite
-src/js/node_modules
+node_modules

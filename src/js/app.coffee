@@ -78,9 +78,9 @@ class RequestInfoCollection extends Backbone.Collection
 
 
 class RequestsView extends Backbone.View
+    id: "requests"
     initialize: (options) ->
-        @el = $("#tpl-requests").text()
-        @$el = $(@el)
+        @$el.html $("#tpl-requests").text()
     render: ->
         @requests = new RequestInfoCollection
         $target = @$el.find("tbody")
@@ -116,9 +116,9 @@ class RequestModel extends Backbone.Model
 
 
 class RequestView extends Backbone.View
+    id: "request"
     initialize: (options) ->
-        @el = $("#tpl-request").text()
-        @$el = $(@el)
+        @$el.html $("#tpl-request").text()
         @template_title     = Mustache.compile $("#tpl-request-title").text()
         @template_content   = Mustache.compile $("#tpl-request-content").text()
         @template_response  = Mustache.compile $("#tpl-request-response").text()
@@ -221,32 +221,48 @@ class RequestView extends Backbone.View
 
 
 class SettingsView extends Backbone.View
+    id: "settings"
+    initialize: (options) ->
+        @$el.html $("#tpl-settings").text()
     render: ->
         @
+
+
+class NavbarView extends Backbone.View
+    initialize: (options) ->
+        @ul_request  = @$el.find(".request")
+        @ul_settings = @$el.find(".settings")
+    set_settings: ->
+        @ul_request.html $("<li><a href=\"#\">Requests</a></li>")
+        @ul_settings.html $("<li>Settings</li>")
+    set_requests: ->
+        @ul_request.html $("<li>Requests</li>")
+        @ul_settings.html $("<li><a href=\"#!/settings\">Settings</a></li>")
+    set_request: (key) ->
+        @ul_request
+            .html($("<li><a href=\"#\">Requests</a><span class=\"divider\">/</span></li>"))
+            .append $("<li>Request</li>")
+        @ul_settings.html $("<li><a href=\"#!/settings\">Settings</a></li>")
+    set_panel: (key, title) ->
+        @ul_request
+            .html($("<li><a href=\"#\">Requests</a><span class=\"divider\">/</span></li>"))
+            .append($("<li><a href=\"#!/r/"+key+"\">Request</a><span class=\"divider\">/</span></li>"))
+            .append $("<li>"+title+"</li>")
+        @ul_settings.html $("<li><a href=\"#!/settings\">Settings</a></li>")
 
 
 class AppView extends Backbone.View
     initialize: (options) ->
         @setElement $("#container")
-        @nav_request = [["Requests", "#"]]
-    nav_request_refresh: ->
-        $ul = $("#navbar .request").html("")
-        for data, i in @nav_request
-            if i == @nav_request.length-1
-                inner = @nav_request[@nav_request.length-1][0]
-            else
-                inner = '<a href="'+data[1]+'">'+data[0]+'</a><span class="divider">/</span>'
-            $("<li>"+inner+"</li>").appendTo $ul
+        @navbarView = new NavbarView
+            el: $("#navbar")
     load_requests: ->
+        @navbarView.set_requests()
         @currentView.remove() if @currentView
         @currentView = new RequestsView
         @$el.html @currentView.render().$el
-        @nav_request = @nav_request[0..0]
-        @nav_request_refresh()
     load_request: (key) ->
-        @nav_request = @nav_request[0..0]
-        @nav_request.push ["Request", "#!/r/" + key]
-        @nav_request_refresh()
+        @navbarView.set_request(key)
         if @currentView? and @currentView instanceof RequestView
             @currentView.unset_panel()
             return
@@ -259,13 +275,9 @@ class AppView extends Backbone.View
         @currentView.set_panel
             panel:    panel,
             callback: =>
-                @nav_request = @nav_request[0..1] 
-                @nav_request.push [
-                    @currentView.model.get("panels")[@currentView.currentPanel].nav_title,
-                    "#!/r/"+key+"/"+@currentView.currentPanel
-                ]
-                @nav_request_refresh()
+                @navbarView.set_panel(key, @currentView.model.get("panels")[@currentView.currentPanel].nav_title)
     load_settings: ->
+        @navbarView.set_settings()
         @currentView.remove() if @currentView
         @currentView = new SettingsView
         @$el.html @currentView.render().$el
