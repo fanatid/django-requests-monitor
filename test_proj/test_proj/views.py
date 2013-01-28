@@ -17,6 +17,7 @@ def index(request):
     user = User.objects.create(
         username = make_username()
     )
+    #raise
     user.username = make_username()
     User.objects.filter(pk=user.pk).delete()
     return render_to_response('folder/index.html')

@@ -5,15 +5,16 @@ from django.views import debug as debug_views
 from django.utils import timezone
 
 
-def info(storage, request, response, toolbar):
+def info(request, response, toolbar):
     return {
         'date':   timezone.now(),
+        'path':   request.get_full_path(),
         'method': request.method,
         'status': response.status_code,
-        'path':   request.get_full_path(),
+        'ajax':   request.is_ajax(),
     }
 
-def panels(storage, request, response, toolbar):
+def panels(request, response, toolbar):
     return {'panels': [{
         'title':        unicode(panel.title()),
         'nav_title':    unicode(panel.nav_title()),
@@ -21,7 +22,7 @@ def panels(storage, request, response, toolbar):
         'content':      panel.content(),
     } for panel in toolbar.panels]}
 
-def response_500_error(storage, request, response, toolbar):
+def response_500_error(request, response, toolbar):
     data = {}
     if isinstance(response, HttpResponseServerError):
         reporter = debug_views.ExceptionReporter(request, *sys.exc_info())

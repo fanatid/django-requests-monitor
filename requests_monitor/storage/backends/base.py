@@ -52,9 +52,10 @@ class Storage(object):
 
     def _make_data(self, request, response, toolbar=None):
         data = {
-            'expiry': time.time() + self.timeout,
-            'key':    self._make_key('%s:%s' % (time.time(), request.get_full_path())),
+            'expiry':    time.time() + self.timeout,
+            'unix_time': time.time(),
+            'key':       self._make_key('%s:%s' % (time.time(), request.get_full_path())),
         }
         for processor in settings.REQUESTS_MONITOR_CONFIG['DATA_PROCESSORS']:
-            data.update(processor(self, request, response, toolbar))
+            data.update(processor(request, response, toolbar))
         return (data['key'], data)

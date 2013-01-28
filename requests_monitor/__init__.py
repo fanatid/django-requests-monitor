@@ -20,8 +20,8 @@ except Exception, e:
 
 
 config = {
-    'STORAGE':         'builtin://127.0.0.1:10627',
-    'RUN_STORAGE_WITH_RUNSERVER': True,
+    'STORAGE':         'redis://127.0.0.1:6379',
+    'RUN_STORAGE_WITH_RUNSERVER': False,
     'TIMEOUT':         300,
     'PREFIX':          '/requests/',
     'FILTERS':         (),

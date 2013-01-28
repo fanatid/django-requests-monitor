@@ -6,23 +6,11 @@ Backbone = require 'backbone'
 Mustache = require 'mustache'
 
 
-
-csrfSafeMethod = (method) ->
-    return /^(GET|HEAD|OPTIONS|TRACE)$/.test(method)
-
-sameOrigin = (url) ->
-    host      = document.location.host
-    protocol  = document.location.protocol
-    sr_origin = '//' + host
-    origin    = protocol + sr_origin
-    return (url == origin or url.slice(0, origin.length + 1) == origin + '/') or
-        (url == sr_origin or url.slice(0, sr_origin.length + 1) == sr_origin + '/') or
-        !(/^(\/\/|http:|https:).*/.test(url))
-
-$.ajaxSetup
-    beforeSend: (xhr, settings) ->
-        if not csrfSafeMethod(settings.type) and sameOrigin(settings.url)
-            xhr.setRequestHeader "X-CSRFToken", $.cookie('csrftoken')
+support_html5_storage = ->
+    try
+        return window['localStorage'] != null
+    catch e
+        return false
 
 
 class RequestInfoView extends Backbone.View
@@ -54,10 +42,13 @@ class RequestInfoCollection extends Backbone.Collection
     comparator: (model) ->
         -model.get("date").getTime()
     sync: ->
-        $.ajax
+        Backbone.ajax
             type: "POST"
             data:
-                "keys": @pluck "key"
+                "keys":     @pluck "key"
+                "settings": if window.settings then JSON.stringify(window.settings.toJSON()) else {}
+            beforeSend: (xhr, settings) ->
+                xhr.setRequestHeader "X-CSRFToken", $.cookie('csrftoken')
             success: (data, status, xhr) =>
                 if data.delete? and data.delete.length > 0
                     @remove _.filter @models, (model) ->
@@ -223,10 +214,44 @@ class RequestView extends Backbone.View
 class SettingsView extends Backbone.View
     id: "settings"
     initialize: (options) ->
-        @$el.html $("#tpl-settings").text()
+        @settings = window.settings
+    events:
+        "input input[type=text]":      "save_settings"
+        "change input[type=checkbox]": "save_settings"
     render: ->
+        unless @settings
+            @$el.html $("<h3>You browser not support HTML5 localStorage! :'(</h3>")
+            return @
+        @$el.html Mustache.render($("#tpl-settings").text(), @settings.toJSON())
         @
-
+    save_settings: ->
+        settings = {}
+        # validate requests_count
+        requests_count = @$el.find("input[name=requests_count]").removeClass("error").val()
+        if requests_count
+            if isNaN(parseInt(requests_count)) or parseInt(requests_count) < 0
+                @$el.find("input[name=requests_count]").addClass("error")
+            else
+                settings.requests_count = requests_count
+        else
+            settings.requests_count = requests_count
+        # ajax_only
+        settings.ajax_only = @$el.find("input[name=ajax_only]").is ":checked"
+        # request_method
+        settings.request_method = @$el.find("input[name=request_method]").val()
+        # request_status_code
+        request_status_code = @$el.find("input[name=request_status_code]").removeClass("error").val()
+        if request_status_code
+            if isNaN(parseInt(request_status_code))
+                @$el.find("input[name=request_status_code]").addClass("error")
+            else
+                settings.request_status_code = request_status_code
+        else
+            settings.request_status_code = request_status_code
+        # save
+        @settings.set settings
+        if @settings.hasChanged()
+            @settings.save()
 
 class NavbarView extends Backbone.View
     initialize: (options) ->
@@ -283,6 +308,24 @@ class AppView extends Backbone.View
         @$el.html @currentView.render().$el
 
 
+class AppSettingsModel extends Backbone.Model
+    name: "requests_monitor_settings"
+    defaults:
+        "requests_count":      undefined
+        "ajax_only":           undefined
+        "request_method":      undefined
+        "request_status_code": undefined
+    sync: (method, model, options) ->
+        if method in ["create", "update", "patch"]
+            localStorage.setItem @name, JSON.stringify(model.toJSON())
+            options.success {}
+        else if method == "read"
+            options.success JSON.parse(localStorage.getItem @name)
+        else if method == "destroy"
+            localStorage.removeItem @name
+            options.success()
+
+
 class AppRouter extends Backbone.Router
     initialize: (options) ->
         @app = new AppView
@@ -301,5 +344,10 @@ class AppRouter extends Backbone.Router
         "!/settings":      "settings",
 
 $ ->
+    if support_html5_storage()
+        window.settings = new AppSettingsModel
+        window.settings.fetch()
+    else
+        window.settings = undefined
     window.router = new AppRouter
     Backbone.history.start()

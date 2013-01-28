@@ -42,12 +42,35 @@ class RedisStorage(Storage):
         return dict(zip(fields,
             map(self._load, self._client.hmget(self._KEY_PREFIX + key, fields))))
 
-    def get_keys(self, clean_db=True):
+    def get_keys(self, settings=None, clean_db=True):
         if clean_db:
             self._clean_db()
         prefix_length = len(self._KEY_PREFIX)
-        for key in self._client.keys(pattern=self._KEY_PREFIX + '*'):
-            yield key[prefix_length:]
+        keys = [key[prefix_length:] for key in self._client.keys(pattern=self._KEY_PREFIX + '*')]
+        if settings is not None:
+            fields = (
+                'unix_time',
+                'ajax',
+                'method',
+                'status',
+            )
+            result = []
+            for key in keys:
+                info = dict(zip(fields, map(self._load, self._client.hmget(self._KEY_PREFIX + key, *fields))))
+                if settings.get('ajax_only', False) and info['ajax'] == False:
+                    continue
+                if settings.get('request_method', False) \
+                  and info['method'] != settings['request_method']:
+                    continue
+                if settings.get('request_status_code', False) \
+                  and settings['request_status_code'].isdigit() \
+                  and info['status'] != int(settings['request_status_code']):
+                    continue
+                result.append((key, info['unix_time']))
+            if settings.get('requests_count', False) and settings['requests_count'].isdigit():
+                result = sorted(result, key=lambda x: x[1], reverse=True)[:int(settings['requests_count'])]
+            keys = [x[0] for x in result]
+        return keys
 
     def get_info(self, keys):
         for key in keys:

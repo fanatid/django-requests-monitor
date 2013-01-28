@@ -52,12 +52,16 @@
     </script>
     <script id="tpl-settings" type="text/template">
 <form>
-    <label>Show last <input type="text" name="requests_count" /> requests</label><br />
+    <div class="help global">All settings are automatically saved</div>
+    <label>
+        Show last <input type="text" name="requests_count"{{#requests_count}} value="{{requests_count}}"{{/requests_count}} /> requests<br />
+        <span class="help">if empty show all requests</span>
+    </label><br />
     <fieldset>
         <legend>Filters</legend>
-        <label><input type="checkbox" name="ajax_only" /> Ajax only</label>
-        <label>Request method <input type="text" name="request_method" /></label>
-        <label>Response status code <input type="text" name="request_status_code" /></label>
+        <label><input type="checkbox" name="ajax_only"{{#ajax_only}} checked="checked"{{/ajax_only}} /> Ajax only</label>
+        <label>Request method <input type="text" name="request_method"{{#request_method}} value="{{request_method}}"{{/request_method}} /></label>
+        <label>Response status code <input type="text" name="request_status_code"{{#request_status_code}} value="{{request_status_code}}"{{/request_status_code}} /></label>
     </fieldset>
 </form>
     </script>

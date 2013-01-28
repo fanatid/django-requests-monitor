@@ -479,4 +479,15 @@ ul, ol, dl, dt, dd, th, td, h3, h4, p, span, pre {
     input[name="request_status_code"] {
         width: 100px;
     }
+    .error {
+        border-color: #b94a48;
+        color: #b94a48;
+    }
+    .help {
+        font-size: 12px;
+        color: gray;
+    }
+    .global {
+        text-align: right;
+    }
 }

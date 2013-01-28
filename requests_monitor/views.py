@@ -10,11 +10,15 @@ from requests_monitor.storage import Storage
 
 
 def index(request):
-    if request.is_ajax():
+    if request.is_ajax() and request.method == "POST":
+        try:
+            user_settings = json.loads(request.REQUEST['settings'])
+        except (KeyError, ValueError):
+            user_settings = {}
         keys  = set(request.REQUEST.getlist('keys[]'))
-        ekeys = set(Storage.get_keys())
+        ekeys = set(Storage.get_keys(settings=user_settings))
         data  = {
-            'new':    list(Storage.get_info(list(ekeys-keys)[:50])),
+            'new':    list(Storage.get_info(list(ekeys-keys)[:25])),
             'delete': list(keys-ekeys),
         }
         return HttpResponse(json.dumps(data), 'application/json')
