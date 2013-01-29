@@ -42,6 +42,5 @@ setup(
     zip_safe=False,
     install_requires=[
         'django-debug-toolbar',
-        'python-memcached',
     ],
 )
